@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color" content="#102c3a">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <title>MoneyTrack</title>
+
+    <script>
+        try {
+            if (localStorage.getItem("sb-ciivqmmydlgbcqyrbxkm-auth-token")) {
+                document.documentElement.classList.add("has-restorable-session");
+            }
+        } catch {
+            // Session detection is only a rendering hint; startup handles storage errors.
+        }
+    </script>
+
+    <link rel="preconnect" href="https://ciivqmmydlgbcqyrbxkm.supabase.co" crossorigin>
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Supabase -->
+    <script defer src="vendor/supabase.js"
+        integrity="sha256-WdOUh8NYmEO0EDItij1WLOAiq6HlzLFomO8/sqDaLs0=" crossorigin="anonymous"></script>
+
+    <!-- Chart.js -->
+    <script defer src="vendor/chart.umd.min.js"
+        integrity="sha256-SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+    <!-- ===================================================== -->
+    <!-- AUTHENTICATION PAGE -->
+    <!-- ===================================================== -->
+
+    <div id="authPage">
+
+        <div class="auth-container">
+
+            <div class="auth-card">
+
+                <div class="auth-logo">
+                    MoneyTrack
+                </div>
+
+                <p class="auth-subtitle">
+                    Manage your money simply
+                </p>
+
+
+                <!-- LOGIN / SIGNUP TABS -->
+
+                <div id="authTabs" class="auth-tabs">
+
+                    <button id="loginTab" class="auth-tab active" type="button" onclick="showLogin()">
+                        Login
+                    </button>
+
+                    <button id="signupTab" class="auth-tab" type="button" onclick="showSignup()">
+                        Sign Up
+                    </button>
+
+                </div>
+
+
+                <!-- LOGIN FORM -->
+
+                <div id="loginForm">
+
+                    <input id="loginEmail" type="email" placeholder="Email" autocomplete="email">
+
+                    <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password">
+
+                    <button class="primary-btn" type="button" onclick="login()">
+                        Login
+                    </button>
+
+                    <button class="auth-text-link forgot-password-link" type="button"
+                        onclick="showForgotPassword()">
+                        Forgot password?
+                    </button>
+
+                </div>
+
+                <div id="forgotPasswordForm" class="hidden">
+
+                    <h2 class="auth-form-title">Reset your password</h2>
+                    <p class="auth-form-description">
+                        Enter your account email and we’ll send you a password reset link.
+                    </p>
+
+                    <input id="resetEmail" type="email" placeholder="Email"
+                        autocomplete="email">
+
+                    <button id="sendResetLinkButton" class="primary-btn" type="button"
+                        onclick="sendPasswordReset()">
+                        Send Reset Link
+                    </button>
+
+                    <button class="auth-text-link" type="button" onclick="showLogin()">
+                        Back to login
+                    </button>
+
+                </div>
+
+                <div id="passwordRecoveryForm" class="hidden">
+
+                    <h2 class="auth-form-title">Choose a new password</h2>
+                    <p class="auth-form-description">
+                        Create a new password for your account.
+                    </p>
+
+                    <input id="recoveryPassword" type="password" placeholder="New password"
+                        autocomplete="new-password">
+
+                    <input id="recoveryPasswordConfirm" type="password"
+                        placeholder="Confirm new password" autocomplete="new-password">
+
+                    <button id="saveRecoveryPasswordButton" class="primary-btn" type="button"
+                        onclick="completePasswordRecovery()">
+                        Update Password
+                    </button>
+
+                </div>
+
+
+                <!-- SIGNUP FORM -->
+
+                <div id="signupForm" class="hidden">
+
+                    <input id="signupName" type="text" placeholder="Name" autocomplete="name">
+
+                    <input id="signupEmail" type="email" placeholder="Email" autocomplete="email">
+
+                    <input id="signupPassword" type="password" placeholder="Password" autocomplete="new-password">
+
+                    <button class="primary-btn" type="button" onclick="signup()">
+                        Create Account
+                    </button>
+
+                </div>
+
+
+                <!-- AUTH MESSAGE -->
+
+                <p id="authMessage" class="auth-message"></p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- MAIN APPLICATION -->
+    <!-- ===================================================== -->
+
+    <div id="appPage" class="hidden">
+
+        <!-- ================================================= -->
+        <!-- HEADER -->
+        <!-- ================================================= -->
+
+        <header>
+
+            <div class="logo">
+                MoneyTrack
+            </div>
+
+            <div class="header-right">
+
+                <div class="welcome">
+
+                    <span id="welcomeText">
+                        Hi, User
+                    </span>
+
+                    <span id="todayDate" class="date-text"></span>
+
+                </div>
+
+                <button class="logout-btn" type="button" onclick="logout()">
+                    Logout
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ================================================= -->
+        <!-- MAIN CONTENT -->
+        <!-- ================================================= -->
+
+        <main>
+
+            <!-- ================================================= -->
+            <!-- APP NAVIGATION -->
+            <!-- ================================================= -->
+
+            <nav id="viewTabs" class="app-tabs" aria-label="Main navigation">
+
+                <button id="historyTab" class="app-tab active" type="button" onclick="showView('history')">
+                    📋 Transaction History
+                </button>
+
+                <button id="budgetsTab" class="app-tab" type="button" onclick="showView('budgets')">
+                    🎯 Budgets
+                </button>
+
+                <button id="recurringTab" class="app-tab" type="button" onclick="showView('recurring')">
+                    🔁 Recurring
+                </button>
+
+                <button id="billRemindersTab" class="app-tab" type="button" onclick="showView('billReminders')">
+                    🔔 Bill Reminders
+                </button>
+
+                <button id="savingsGoalsTab" class="app-tab" type="button" onclick="showView('savingsGoals')">
+                    🏆 Savings Goals
+                </button>
+
+                <button id="categoriesTab" class="app-tab" type="button" onclick="showView('categories')">
+                    🗂️ Categories
+                </button>
+
+                <button id="reportsTab" class="app-tab" type="button" onclick="showView('reports')">
+                    📊 Reports
+                </button>
+
+                <button id="profileTab" class="app-tab" type="button" onclick="showView('profile')">
+                    👤 Profile
+                </button>
+
+            </nav>
+
+
+            <!-- ================================================= -->
+            <!-- DASHBOARD -->
+            <!-- ================================================= -->
+
+            <section id="dashboardSection" class="dashboard-section">
+
+                <div class="dashboard-cards">
+
+                    <div class="dashboard-card">
+
+                        <span class="card-title">
+                            Total Income
+                        </span>
+
+                        <strong id="totalIncome">
+                            ₹0
+                        </strong>
+
+                    </div>
+
+
+                    <div class="dashboard-card">
+
+                        <span class="card-title">
+                            Total Expenses
+                        </span>
+
+                        <strong id="totalExpense">
+                            ₹0
+                        </strong>
+
+                    </div>
+
+
+                    <div class="dashboard-card">
+
+                        <span class="card-title">
+                            Balance
+                        </span>
+
+                        <strong id="balance">
+                            ₹0
+                        </strong>
+
+                    </div>
+
+                </div>
+
+                <div class="dashboard-insights" aria-label="Monthly spending insights">
+                    <article class="insight-card">
+                        <span class="insight-label">Spent this month</span>
+                        <strong id="monthToDateSpending">₹0</strong>
+                        <span id="monthSpendingCaption" class="insight-caption"></span>
+                    </article>
+                    <article class="insight-card">
+                        <span class="insight-label">Compared to last month</span>
+                        <strong id="monthlySpendingChange">—</strong>
+                        <span id="monthlySpendingComparison" class="insight-caption"></span>
+                    </article>
+                    <article class="insight-card">
+                        <span class="insight-label">Top spending category</span>
+                        <strong id="topSpendingCategory">—</strong>
+                        <span id="topSpendingAmount" class="insight-caption"></span>
+                    </article>
+                </div>
+
+            </section>
+
+
+
+            <!-- ================================================= -->
+            <!-- TRANSACTION HISTORY VIEW -->
+            <!-- ================================================= -->
+
+            <section id="historySection" class="panel">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Transactions
+                        </h2>
+
+                        <p class="date-text">
+                            Your transaction history
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+                <div class="transaction-filters">
+
+                    <div class="transaction-filter-field transaction-search-field">
+                        <label for="transactionSearch">Search transactions</label>
+                        <input id="transactionSearch" type="search"
+                            placeholder="Search category, description, amount..."
+                            oninput="filterTransactions()">
+                    </div>
+
+                    <div class="transaction-filter-field">
+                        <label for="filterType">Type</label>
+                        <select id="filterType" onchange="filterTransactions()">
+                            <option value="all">All types</option>
+                            <option value="income">Income</option>
+                            <option value="expense">Expenses</option>
+                        </select>
+                    </div>
+
+                    <div class="transaction-filter-field">
+                        <label for="transactionDateFrom">From date</label>
+                        <input id="transactionDateFrom" type="date"
+                            onchange="filterTransactions()">
+                    </div>
+
+                    <div class="transaction-filter-field">
+                        <label for="transactionDateTo">To date</label>
+                        <input id="transactionDateTo" type="date"
+                            onchange="filterTransactions()">
+                    </div>
+
+                    <button class="clear-filters-btn" type="button"
+                        onclick="clearTransactionFilters()">Clear filters</button>
+
+                    <label class="import-csv-btn" for="importTransactionsCsv">Import CSV</label>
+                    <input id="importTransactionsCsv" type="file" accept=".csv,text/csv"
+                        class="hidden" onchange="importTransactionsCsv(this.files[0])">
+                    <button id="exportTransactionsButton" class="export-csv-btn" type="button"
+                        onclick="exportTransactionsCsv()">Export CSV</button>
+
+                </div>
+
+                <p id="exportMessage" class="export-message" role="status" aria-live="polite"></p>
+
+
+                <!-- TRANSACTION FORM -->
+
+                <div class="transaction-form">
+
+                    <h3>
+                        Add Transaction
+                    </h3>
+
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+
+                            <label for="transactionType">
+                                Type
+                            </label>
+
+                            <select id="transactionType" onchange="updateSavingsGoalAvailability()">
+
+                                <option value="expense">
+                                    Expense
+                                </option>
+
+                                <option value="income">
+                                    Income
+                                </option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="amount">
+                                Amount
+                            </label>
+
+                            <input id="amount" type="number" min="0" step="0.01" placeholder="₹0">
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="transactionDate">
+                                Date
+                            </label>
+
+                            <input id="transactionDate" type="date">
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label for="category">
+                                Category
+                            </label>
+
+                            <select id="category"></select>
+
+                        </div>
+
+
+                        <div class="form-group form-group-wide">
+
+                            <label for="description">
+                                Description
+                            </label>
+
+                            <input id="description" type="text" placeholder="What was this transaction for?">
+
+                        </div>
+
+                        <div class="form-group form-group-wide">
+                            <label for="transactionSavingsGoal">Savings goal contribution</label>
+                            <select id="transactionSavingsGoal">
+                                <option value="">Not linked to a savings goal</option>
+                            </select>
+                            <small class="form-help">Tag an expense when you move money into savings. Its amount counts toward the selected goal.</small>
+                        </div>
+
+                    </div>
+
+
+                    <button class="primary-btn" type="button" onclick="addTransaction()">
+                        Add Transaction
+                    </button>
+                    <p id="transactionMessage" class="profile-message" role="status" aria-live="polite"></p>
+
+                </div>
+
+
+
+                <!-- TRANSACTION TABLE -->
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Type
+                                </th>
+
+                                <th>
+                                    Category
+                                </th>
+
+                                <th>
+                                    Description
+                                </th>
+
+                                <th>
+                                    Amount
+                                </th>
+
+                                <th>
+                                    Actions
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="transactionList"></tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div id="emptyMessage" class="empty-message">
+                    No transactions yet.
+                </div>
+
+            </section>
+
+
+            <!-- ================================================= -->
+            <!-- MONTHLY BUDGETS VIEW -->
+            <!-- ================================================= -->
+
+            <section id="budgetsSection" class="panel budgets-panel hidden">
+
+                <div class="reports-header">
+
+                    <div>
+                        <h2>Monthly Budgets</h2>
+                        <p class="date-text">Set limits that repeat monthly and track spending for the month you select</p>
+                    </div>
+
+                    <div class="month-selector">
+                        <label for="budgetMonth">Tracking month</label>
+                        <input id="budgetMonth" type="month" onchange="updateBudgets()">
+                    </div>
+
+                </div>
+
+                <div class="budget-form">
+
+                    <h3>Set a category limit</h3>
+
+                    <div class="budget-form-fields">
+
+                        <div class="form-group">
+                            <label for="budgetCategory">Expense category</label>
+                            <select id="budgetCategory"></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="budgetLimit">Monthly limit</label>
+                            <input id="budgetLimit" type="number" min="0.01" step="0.01"
+                                placeholder="Enter an amount">
+                        </div>
+                        <label class="checkbox-row">
+                            <input id="budgetRollover" type="checkbox">
+                            Roll unused budget to next month
+                        </label>
+                        <div class="form-group">
+                            <label for="overallBudgetLimit">Overall monthly budget</label>
+                            <input id="overallBudgetLimit" type="number" min="0.01" step="0.01"
+                                placeholder="Enter an overall limit">
+                        </div>
+                        <button id="saveOverallBudgetButton" class="secondary-btn" type="button"
+                            onclick="saveOverallBudget()">Save Overall Budget</button>
+
+                        <button id="saveBudgetButton" class="primary-btn" type="button"
+                            onclick="saveMonthlyBudget()">Save Budget</button>
+
+                    </div>
+
+                    <p id="budgetMessage" class="profile-message" role="status" aria-live="polite"></p>
+
+                </div>
+
+                <div id="budgetSummary" class="budget-summary" aria-live="polite"></div>
+                <p id="budgetLoadError" class="profile-message error hidden" role="status"
+                    aria-live="polite"></p>
+                <div id="budgetCards" class="budget-grid" aria-live="polite"></div>
+                <div id="budgetEmptyMessage" class="empty-message hidden">
+                    No budgets set yet. Add a category limit above to start tracking your spending.
+                </div>
+
+            </section>
+
+            <!-- ================================================= -->
+            <!-- RECURRING TRANSACTIONS VIEW -->
+            <!-- ================================================= -->
+
+            <section id="recurringSection" class="panel recurring-panel hidden">
+
+                <div class="section-header">
+                    <div>
+                        <h2>Recurring Transactions</h2>
+                        <p class="date-text">Keep track of regular bills and income. Review and confirm each one before it is recorded.</p>
+                    </div>
+                </div>
+
+                <form id="recurringForm" class="recurring-form"
+                    onsubmit="event.preventDefault(); saveRecurringTemplate();">
+
+                    <h3>Add a recurring item</h3>
+
+                    <div class="recurring-form-grid">
+
+                        <div class="form-group">
+                            <label for="recurringType">Type</label>
+                            <select id="recurringType">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurringAmount">Amount</label>
+                            <input id="recurringAmount" type="number" min="0.01" step="0.01"
+                                placeholder="Enter an amount" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurringCategory">Category</label>
+                            <select id="recurringCategory"></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurringFrequency">Repeat</label>
+                            <select id="recurringFrequency">
+                                <option value="monthly">Monthly</option>
+                                <option value="weekly">Weekly</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurringNextDate">First due date</label>
+                            <input id="recurringNextDate" type="date" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="recurringReminderDays">Bill reminder (expenses only)</label>
+                            <select id="recurringReminderDays">
+                                <option value="0">No reminder</option>
+                                <option value="1">1 day before</option>
+                                <option value="3" selected>3 days before</option>
+                                <option value="7">1 week before</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group recurring-description-field">
+                            <label for="recurringDescription">Description</label>
+                            <input id="recurringDescription" type="text" maxlength="200"
+                                placeholder="e.g. Monthly rent">
+                        </div>
+
+                    </div>
+
+                    <button id="saveRecurringButton" class="primary-btn" type="submit">
+                        Save recurring item
+                    </button>
+
+                    <p id="recurringMessage" class="profile-message" role="status"
+                        aria-live="polite"></p>
+
+                </form>
+
+                <div id="recurringList" class="recurring-list" aria-live="polite"></div>
+                <div id="recurringEmptyMessage" class="empty-message">
+                    No recurring items yet. Add a regular bill or income above.
+                </div>
+
+            </section>
+
+            <!-- ================================================= -->
+            <!-- BILL REMINDERS VIEW -->
+            <!-- ================================================= -->
+
+            <section id="billRemindersSection" class="panel bill-reminders-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Upcoming Bill Reminders</h2>
+                        <p class="date-text">Bills with reminders due now or within their selected reminder window</p>
+                    </div>
+                    <div class="section-actions">
+                        <button class="secondary-btn" type="button" onclick="enableReminderNotifications()">
+                            Enable notifications
+                        </button>
+                        <button class="secondary-btn" type="button" onclick="showView('recurring')">
+                            Manage recurring bills
+                        </button>
+                    </div>
+                </div>
+
+                <div id="billReminderList" class="bill-reminder-list" aria-live="polite"></div>
+                <p id="billReminderEmpty" class="empty-message">
+                    No bills need a reminder right now. Set a reminder when adding an expense in Recurring.
+                </p>
+            </section>
+
+            <!-- ================================================= -->
+            <!-- SAVINGS GOALS VIEW -->
+            <!-- ================================================= -->
+
+            <section id="savingsGoalsSection" class="panel feature-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Savings Goals</h2>
+                        <p class="date-text">Set a target and track progress from linked expense transactions</p>
+                    </div>
+                </div>
+
+                <form id="savingsGoalForm" class="feature-form"
+                    onsubmit="event.preventDefault(); saveSavingsGoal();">
+                    <h3>Create a savings goal</h3>
+                    <div class="feature-form-fields">
+                        <div class="form-group">
+                            <label for="savingsGoalName">Goal name</label>
+                            <input id="savingsGoalName" type="text" maxlength="60"
+                                placeholder="e.g. New laptop" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="savingsGoalTarget">Target amount</label>
+                            <input id="savingsGoalTarget" type="number" min="0.01" step="0.01"
+                                placeholder="Enter an amount" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="savingsGoalDate">Target date (optional)</label>
+                            <input id="savingsGoalDate" type="date">
+                        </div>
+                        <button id="saveSavingsGoalButton" class="primary-btn" type="submit">
+                            Create goal
+                        </button>
+                    </div>
+                    <p id="savingsGoalMessage" class="profile-message" role="status" aria-live="polite"></p>
+                </form>
+
+                <div id="savingsGoalList" class="feature-card-grid" aria-live="polite"></div>
+                <p id="savingsGoalEmpty" class="empty-message">No savings goals yet. Create one above to start tracking.</p>
+            </section>
+
+            <!-- ================================================= -->
+            <!-- CATEGORY MANAGEMENT VIEW -->
+            <!-- ================================================= -->
+
+            <section id="categoriesSection" class="panel feature-panel hidden">
+                <div class="section-header">
+                    <div>
+                        <h2>Transaction Categories</h2>
+                        <p class="date-text">Add categories for transactions, budgets, and recurring items</p>
+                    </div>
+                </div>
+
+                <form id="categoryForm" class="feature-form"
+                    onsubmit="event.preventDefault(); addCustomCategory();">
+                    <h3>Add a category</h3>
+                    <div class="feature-form-fields category-form-fields">
+                        <div class="form-group">
+                            <label for="newCategoryName">Category name</label>
+                            <input id="newCategoryName" type="text" maxlength="40"
+                                placeholder="e.g. Pets" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newCategoryType">Category type</label>
+                            <select id="newCategoryType">
+                                <option value="expense">Expense</option>
+                                <option value="income">Income</option>
+                            </select>
+                        </div>
+                        <button id="addCategoryButton" class="primary-btn" type="submit">Add category</button>
+                    </div>
+                    <p id="categoryMessage" class="profile-message" role="status" aria-live="polite"></p>
+                </form>
+
+                <h3 class="feature-list-title">Your categories</h3>
+                <div id="categoryList" class="category-list" aria-live="polite"></div>
+            </section>
+
+
+
+            <!-- ================================================= -->
+            <!-- REPORTS VIEW -->
+            <!-- ================================================= -->
+
+            <section id="reportsSection" class="panel reports-panel hidden">
+
+
+                <!-- REPORT HEADER -->
+
+                <div class="reports-header">
+
+                    <div>
+
+                        <h2>
+                            Reports
+                        </h2>
+
+                        <p class="date-text">
+                            View your finances by month
+                        </p>
+
+                    </div>
+
+
+                    <!-- MONTH SELECTOR -->
+
+                    <div class="month-selector">
+
+                        <button type="button" class="month-btn" onclick="changeReportMonth(-1)"
+                            aria-label="Previous month">
+                            ←
+                        </button>
+
+                        <input id="reportMonth" type="month" onchange="updateReports()">
+
+                        <button type="button" class="month-btn" onclick="changeReportMonth(1)" aria-label="Next month">
+                            →
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+
+                <!-- ================================================= -->
+                <!-- GRAPH REPORT -->
+                <!-- ================================================= -->
+
+                <div id="graphReport">
+
+
+                    <!-- REPORT SUMMARY -->
+
+                    <div class="report-summary">
+
+                        <div class="report-card">
+
+                            <span>
+                                Monthly Income
+                            </span>
+
+                            <strong id="reportIncome">
+                                ₹0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="report-card">
+
+                            <span>
+                                Monthly Expenses
+                            </span>
+
+                            <strong id="reportExpense">
+                                ₹0
+                            </strong>
+
+                        </div>
+
+
+                        <div class="report-card">
+
+                            <span>
+                                Monthly Balance
+                            </span>
+
+                            <strong id="reportBalance">
+                                ₹0
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- INCOME VS EXPENSE -->
+
+                    <div class="chart-panel">
+
+                        <h3>
+                            Income vs Expenses
+                        </h3>
+
+                        <div class="chart-container">
+
+                            <canvas id="incomeExpenseChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- EXPENSE CATEGORY -->
+
+                    <div class="chart-panel">
+
+                        <h3>
+                            Expenses by Category
+                        </h3>
+
+                        <div class="chart-container">
+
+                            <canvas id="categoryChart"></canvas>
+
+                        </div>
+
+                    </div>
+
+                    <div class="chart-panel spending-trends-panel">
+
+                        <h3>Spending Trends — Last 12 Months</h3>
+
+                        <div class="chart-container">
+                            <canvas id="spendingTrendsChart"></canvas>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+            </section>
+
+            <!-- ================================================= -->
+            <!-- PROFILE VIEW -->
+            <!-- ================================================= -->
+
+            <section id="profileSection" class="panel profile-panel hidden">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Your Profile
+                        </h2>
+
+                        <p class="date-text">
+                            Manage the details shown on your account
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="profile-grid">
+
+                    <form id="profileForm" class="profile-card profile-form"
+                        onsubmit="event.preventDefault(); saveProfile();">
+
+                        <div class="profile-card-heading">
+                            <h3>Account details</h3>
+                            <p>Personalize how your account appears</p>
+                        </div>
+
+                        <div class="profile-avatar" aria-hidden="true" id="profileAvatar">U</div>
+
+                        <div class="form-group">
+
+                            <label for="profileName">
+                                Name
+                            </label>
+
+                            <input id="profileName" type="text" maxlength="80" autocomplete="name"
+                                oninput="previewProfileAvatar()" required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="profileEmail">
+                                Email
+                            </label>
+
+                            <input id="profileEmail" type="email" autocomplete="email" readonly>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="profileMemberSince">
+                                Member since
+                            </label>
+
+                            <input id="profileMemberSince" type="text" readonly>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="profileAvatarChoice">
+                                Avatar
+                            </label>
+
+                            <select id="profileAvatarChoice" onchange="previewProfileAvatar()">
+                                <option value="initials">Name initial</option>
+                                <option value="😊">😊 Smiling face</option>
+                                <option value="🌟">🌟 Star</option>
+                                <option value="🎯">🎯 Target</option>
+                                <option value="💼">💼 Briefcase</option>
+                                <option value="🌱">🌱 Plant</option>
+                            </select>
+
+                        </div>
+
+                        <div class="profile-card-heading profile-preferences-heading">
+                            <h3>Preferences</h3>
+                            <p>Choose how amounts and dates appear throughout the app</p>
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="profileCurrency">
+                                Currency
+                            </label>
+
+                            <select id="profileCurrency">
+                                <option value="INR">INR - Indian Rupee</option>
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                            </select>
+
+                            <small class="profile-help">
+                                Changes display formatting only; amounts are not converted.
+                            </small>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="profileDateFormat">
+                                Date format
+                            </label>
+
+                            <select id="profileDateFormat">
+                                <option value="en-IN">DD/MM/YYYY</option>
+                                <option value="en-US">MM/DD/YYYY</option>
+                                <option value="en-CA">YYYY-MM-DD</option>
+                            </select>
+
+                        </div>
+
+                        <fieldset class="theme-setting">
+
+                            <legend>Appearance</legend>
+
+                            <p class="theme-description">
+                                Choose a light or dark background for MoneyTrack.
+                            </p>
+
+                            <div class="theme-options" role="group" aria-label="Website theme">
+
+                                <button id="lightThemeButton" class="theme-option active" type="button"
+                                    aria-pressed="true" onclick="setThemePreference('light')">
+                                    ☀️ Light
+                                </button>
+
+                                <button id="darkThemeButton" class="theme-option" type="button"
+                                    aria-pressed="false" onclick="setThemePreference('dark')">
+                                    🌙 Dark
+                                </button>
+
+                            </div>
+
+                        </fieldset>
+
+                        <button id="saveProfileButton" class="primary-btn profile-save-btn" type="submit">
+                            Save Profile & Preferences
+                        </button>
+
+                        <p id="profileMessage" class="profile-message" role="status" aria-live="polite"></p>
+
+                    </form>
+
+                    <form id="passwordForm" class="profile-card password-form"
+                        onsubmit="event.preventDefault(); changePassword();">
+
+                        <div class="profile-card-heading">
+                            <h3>Change password</h3>
+                            <p>Choose a new password for your account</p>
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="newPassword">
+                                New password
+                            </label>
+
+                            <input id="newPassword" type="password" minlength="6" autocomplete="new-password"
+                                required>
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="confirmPassword">
+                                Confirm new password
+                            </label>
+
+                            <input id="confirmPassword" type="password" minlength="6" autocomplete="new-password"
+                                required>
+
+                        </div>
+
+                        <button id="changePasswordButton" class="primary-btn" type="submit">
+                            Update Password
+                        </button>
+
+                        <p id="passwordMessage" class="profile-message" role="status" aria-live="polite"></p>
+
+                    </form>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <!-- ===================================================== -->
+    <!-- APPLICATION JAVASCRIPT -->
+    <!-- ===================================================== -->
+
+    <script defer src="modules/core.js"></script>
+    <script defer src="modules/utils.js"></script>
+    <script defer src="modules/auth.js"></script>
+    <script defer src="modules/data.js"></script>
+    <script defer src="modules/transactions.js"></script>
+    <script defer src="modules/dashboard.js"></script>
+    <script defer src="modules/reports.js"></script>
+    <script defer src="modules/app.js"></script>
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker.register("./service-worker.js")
+                    .catch(error => console.error("Could not register service worker:", error));
+            });
+        }
+    </script>
+</body>
+
+</html>
