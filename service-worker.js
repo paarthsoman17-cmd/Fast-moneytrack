@@ -1,4 +1,4 @@
-const CACHE_NAME = "moneytrack-v10-static";
+const CACHE_NAME = "moneytrack-v11-signup";
 
 const FILES_TO_CACHE = [
     "./",

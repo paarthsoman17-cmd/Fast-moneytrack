@@ -8,7 +8,7 @@ function formatSignupError(error) {
         String(error?.message || error || "");
 
     if (/confirmation email|email sending|error sending/i.test(errorMessage)) {
-        return "Supabase could not send the confirmation email. Email delivery may be unavailable or restricted. Check the project's Authentication email settings, then try again.";
+        return "Account creation could not be completed because Supabase email delivery is unavailable. Ask the project owner to disable email confirmation for testing or configure SMTP in Supabase Authentication settings.";
     }
 
     if (/email address not authorized|recipient.*inactive|inactive.*address/i.test(errorMessage)) {
@@ -69,7 +69,8 @@ async function signup() {
                 options: {
                     data: {
                         name: name
-                    }
+                    },
+                    emailRedirectTo: `${window.location.origin}/`
                 }
 
             });
@@ -83,9 +84,9 @@ async function signup() {
         }
 
         message.style.color = "#16a34a";
-
-        message.textContent =
-            "Account created. Check your email for a confirmation link before signing in.";
+        message.textContent = data?.session
+            ? "Account created. You are now signed in."
+            : "Account created. Check your email for the confirmation link, then sign in.";
 
         document.getElementById("signupName").value = "";
         document.getElementById("signupEmail").value = "";
@@ -992,4 +993,3 @@ async function changePassword() {
     message.textContent = "Password updated successfully.";
     message.className = "profile-message success";
 }
-
