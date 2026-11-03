@@ -1,4 +1,4 @@
-const CACHE_NAME = "moneytrack-v15-password-reset-timeout";
+const CACHE_NAME = "moneytrack-v16-password-reset-network-check";
 
 const FILES_TO_CACHE = [
     "./",
