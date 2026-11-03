@@ -234,12 +234,21 @@ async function sendPasswordReset() {
     message.textContent = "Sending password reset link...";
 
     try {
+        let resetTimeoutId;
         const options = ["http:", "https:"].includes(window.location.protocol)
             ? { redirectTo: `${window.location.origin}/` }
             : undefined;
 
-        const { error } =
-            await supabaseClient.auth.resetPasswordForEmail(email, options);
+        const resetRequest =
+            supabaseClient.auth.resetPasswordForEmail(email, options);
+        const resetTimeout = new Promise((_, reject) => {
+            resetTimeoutId = window.setTimeout(
+                () => reject(new Error("Password-reset request timed out. Check your connection and try again.")),
+                15000
+            );
+        });
+        const { error } = await Promise.race([resetRequest, resetTimeout]);
+        window.clearTimeout(resetTimeoutId);
 
         if (error) {
             console.error("Could not send password reset email:", error);
