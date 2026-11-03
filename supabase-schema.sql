@@ -60,6 +60,27 @@ alter table public.savings_goals enable row level security;
 alter table public.custom_categories enable row level security;
 alter table public.reminder_deliveries enable row level security;
 
+grant select, insert, update, delete on public.budgets to authenticated;
+grant select, insert, update, delete on public.recurring_templates to authenticated;
+grant select, insert, update, delete on public.savings_goals to authenticated;
+grant select, insert, update, delete on public.custom_categories to authenticated;
+grant select, insert, update, delete on public.reminder_deliveries to authenticated;
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists recurring_templates_set_updated_at on public.recurring_templates;
+create trigger recurring_templates_set_updated_at
+before update on public.recurring_templates
+for each row execute function public.set_updated_at();
+
 drop policy if exists budgets_owner_all on public.budgets;
 drop policy if exists recurring_owner_all on public.recurring_templates;
 drop policy if exists savings_owner_all on public.savings_goals;

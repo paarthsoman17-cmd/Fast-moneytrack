@@ -19,6 +19,22 @@ function getSavingsGoals() {
         })).filter(goal => goal.name && goal.target > 0);
     }
 
+    async function migrateSavingsGoals() {
+        if (!currentUser || !databaseFeaturesLoaded || databaseSavingsGoals.length) return;
+        const saved = currentUser.user_metadata?.savingsGoals;
+        if (!Array.isArray(saved) || saved.length === 0) return;
+        const rows = saved.map(goal => ({
+            user_id: currentUser.id,
+            name: String(goal.name).trim(),
+            target_amount: Number(goal.target),
+            target_date: goal.targetDate || null
+        })).filter(goal => goal.name && goal.target_amount > 0);
+        if (!rows.length) return;
+        const { data, error } = await supabaseClient.from("savings_goals")
+            .insert(rows).select("*");
+        if (!error) databaseSavingsGoals = data || [];
+    }
+
     const saved = currentUser?.user_metadata?.savingsGoals;
 
     if (!Array.isArray(saved)) {
@@ -957,5 +973,4 @@ async function deleteTransaction(id) {
     await updateDashboard();
 
 }
-
 

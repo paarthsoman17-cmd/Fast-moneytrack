@@ -608,6 +608,7 @@ async function initializeApp(user) {
 
     populateProfile(user);
     await loadDatabaseFeatures();
+    await migrateSavingsGoals();
     refreshCategorySelects();
     refreshSavingsGoalSelect();
     updateSavingsGoalAvailability();

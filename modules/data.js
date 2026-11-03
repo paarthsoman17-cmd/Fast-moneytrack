@@ -21,6 +21,76 @@ async function loadDatabaseFeatures() {
     databaseSavingsGoals = goals.data || [];
     databaseCustomCategories = categories.data || [];
     databaseFeaturesLoaded = true;
+
+    await migrateDatabaseFeatures();
+}
+
+async function migrateDatabaseFeatures() {
+    if (!currentUser || !databaseFeaturesLoaded) return;
+
+    const metadataBudgets = currentUser.user_metadata?.budgets;
+    if (
+        databaseBudgets.length === 0 &&
+        metadataBudgets &&
+        typeof metadataBudgets === "object"
+    ) {
+        const month = `${getLocalISODate().slice(0, 7)}-01`;
+        const rows = Object.entries(metadataBudgets)
+            .filter(([category, amount]) =>
+                getBudgetCategories().includes(category) &&
+                Number(amount) > 0)
+            .map(([category, amount]) => ({
+                user_id: currentUser.id,
+                category,
+                month,
+                amount: Number(amount),
+                rollover_enabled: Boolean(currentUser.user_metadata?.budgetRolloverEnabled)
+            }));
+        if (rows.length) {
+            const { error } = await supabaseClient.from("budgets").upsert(rows, {
+                onConflict: "user_id,category,month"
+            });
+            if (!error) {
+                const { data } = await supabaseClient.from("budgets")
+                    .select("*").eq("user_id", currentUser.id);
+                databaseBudgets = data || [];
+            }
+        }
+    }
+
+    const metadataRecurring = currentUser.user_metadata?.recurringTransactions;
+    if (databaseRecurringTemplates.length === 0 && Array.isArray(metadataRecurring) && metadataRecurring.length) {
+        const rows = metadataRecurring.map(template => ({
+            user_id: currentUser.id,
+            type: template.type,
+            category: template.category,
+            amount: Number(template.amount),
+            description: template.description || "-",
+            frequency: template.frequency,
+            next_date: template.nextDate,
+            day_of_month: template.dayOfMonth || Number(template.nextDate.slice(-2)),
+            reminder_days: Number(template.reminderDays || 0),
+            pending_date: template.pendingDate || null
+        }));
+        const { data, error } = await supabaseClient.from("recurring_templates")
+            .insert(rows).select("*");
+        if (!error) databaseRecurringTemplates = data || [];
+    }
+
+    const metadataCategories = currentUser.user_metadata?.customCategories;
+    if (databaseCustomCategories.length === 0 && Array.isArray(metadataCategories) && metadataCategories.length) {
+        const rows = metadataCategories.map(category =>
+            typeof category === "string"
+                ? { user_id: currentUser.id, name: category, type: "expense" }
+                : {
+                    user_id: currentUser.id,
+                    name: category.name,
+                    type: category.type === "income" ? "income" : "expense"
+                });
+        const { data, error } = await supabaseClient.from("custom_categories")
+            .insert(rows).select("*");
+        if (!error) databaseCustomCategories = data || [];
+    }
 }
 
 // ==========================================
@@ -1152,5 +1222,3 @@ function renderBudgetCards(transactions) {
         `with a combined limit of ${formatMoney(totalLimit)}.`;
     summary.appendChild(summaryText);
 }
-
-
