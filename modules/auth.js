@@ -255,7 +255,7 @@ async function sendPasswordReset() {
         console.error("Could not send password reset email:", error);
         message.style.color = "#dc2626";
         message.textContent =
-            `Could not send the reset link: ${error.message}`;
+            formatPasswordResetError(error);
     } finally {
         button.disabled = false;
         button.textContent = "Send Reset Link";
