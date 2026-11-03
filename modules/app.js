@@ -235,10 +235,7 @@ async function startup() {
 supabaseClient.auth.onAuthStateChange(
     async (event, session) => {
 
-        if (
-            event === "PASSWORD_RECOVERY" &&
-            session?.user
-        ) {
+        if (event === "PASSWORD_RECOVERY" && session?.user) {
             passwordRecoveryCallback = true;
             currentUser = session.user;
             showPasswordRecovery();

@@ -234,12 +234,8 @@ async function sendPasswordReset() {
     message.textContent = "Sending password reset link...";
 
     try {
-        const currentUrl = new URL(window.location.href);
-        currentUrl.hash = "";
-        currentUrl.search = "";
-
         const options = ["http:", "https:"].includes(window.location.protocol)
-            ? { redirectTo: currentUrl.toString() }
+            ? { redirectTo: `${window.location.origin}/` }
             : undefined;
 
         const { error } =
@@ -248,7 +244,7 @@ async function sendPasswordReset() {
         if (error) {
             console.error("Could not send password reset email:", error);
             message.style.color = "#dc2626";
-            message.textContent = error.message;
+            message.textContent = formatPasswordResetError(error);
             return;
         }
 
@@ -263,6 +259,17 @@ async function sendPasswordReset() {
     } finally {
         button.disabled = false;
         button.textContent = "Send Reset Link";
+    }
+
+    function formatPasswordResetError(error) {
+        const text = String(error?.message || error || "");
+        if (/confirmation email|email sending|error sending|smtp/i.test(text)) {
+            return "Email delivery is not configured in Supabase. Ask the project owner to enable SMTP, then try again.";
+        }
+        if (/redirect|allowed|site url/i.test(text)) {
+            return "The password-reset URL is not allowed by Supabase. Add this website URL to Authentication → URL Configuration.";
+        }
+        return text || "Could not send the password reset email.";
     }
 }
 
