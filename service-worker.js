@@ -1,4 +1,4 @@
-const CACHE_NAME = "moneytrack-v12-database-migration";
+const CACHE_NAME = "moneytrack-v13-auth-gate";
 
 const FILES_TO_CACHE = [
     "./",

@@ -117,6 +117,13 @@ async function startup() {
     document.getElementById("authPage")?.classList.remove("hidden");
     showLogin();
 
+    let hasStoredSession = false;
+    try {
+        hasStoredSession = Boolean(localStorage.getItem("sb-ciivqmmydlgbcqyrbxkm-auth-token"));
+    } catch {
+        hasStoredSession = false;
+    }
+
     const isRecovery =
         passwordRecoveryCallback ||
         isPasswordRecoveryCallback();
@@ -124,6 +131,13 @@ async function startup() {
     let session = null;
 
     try {
+        if (!hasStoredSession && !isRecovery) {
+            document.getElementById("appPage")?.classList.add("hidden");
+            document.getElementById("authPage")?.classList.remove("hidden");
+            showLogin();
+            return;
+        }
+
         const sessionPromise = supabaseClient.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => {
             window.setTimeout(() => reject(new Error("Session check timed out")), 5000);
