@@ -34,6 +34,7 @@
     <!-- Chart.js -->
     <script defer src="vendor/chart.umd.min.js"
         integrity="sha256-SERKgtTty1vsDxll+qzd4Y2cF9swY9BCq62i9wXJ9Uo=" crossorigin="anonymous"></script>
+    <script defer src="vendor/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -87,6 +88,27 @@
                     <button class="auth-text-link forgot-password-link" type="button"
                         onclick="showForgotPassword()">
                         Forgot password?
+                    </button>
+
+                </div>
+
+                <div id="totpChallengeForm" class="hidden">
+
+                    <h2 class="auth-form-title">Authenticator code</h2>
+                    <p class="auth-form-description">
+                        Enter the 6-digit code from your authenticator app.
+                    </p>
+
+                    <input id="totpCode" type="text" inputmode="numeric" autocomplete="one-time-code"
+                        maxlength="6" pattern="[0-9]{6}" placeholder="000000">
+
+                    <button id="verifyTotpButton" class="primary-btn" type="button"
+                        onclick="verifyTotpChallenge()">
+                        Verify and sign in
+                    </button>
+
+                    <button class="auth-text-link" type="button" onclick="cancelTotpChallenge()">
+                        Cancel
                     </button>
 
                 </div>
@@ -1126,6 +1148,34 @@
 
                     </form>
 
+                    <section class="profile-card security-card">
+                        <div class="profile-card-heading">
+                            <h3>Authenticator app</h3>
+                            <p>Use a 6-digit code from Google or Microsoft Authenticator when signing in</p>
+                        </div>
+
+                        <button id="setupTotpButton" class="primary-btn" type="button"
+                            onclick="startTotpEnrollment()">
+                            Set up authenticator
+                        </button>
+
+                        <div id="totpEnrollment" class="hidden">
+                            <div id="totpQrCode" class="totp-qr-code"
+                                role="img" aria-label="Authenticator QR code"></div>
+                            <p id="totpSecret" class="profile-help"></p>
+                            <label for="totpEnrollmentCode">Code from your authenticator app</label>
+                            <input id="totpEnrollmentCode" type="text" inputmode="numeric"
+                                autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"
+                                placeholder="000000">
+                            <button id="verifyTotpEnrollmentButton" class="secondary-btn" type="button"
+                                onclick="verifyTotpEnrollment()">
+                                Confirm setup
+                            </button>
+                        </div>
+
+                        <p id="totpSecurityMessage" class="profile-message" role="status" aria-live="polite"></p>
+                    </section>
+
                 </div>
 
             </section>
@@ -1140,6 +1190,7 @@
     <!-- ===================================================== -->
 
     <script defer src="modules/core.js"></script>
+    <script defer src="modules/totp.js"></script>
     <script defer src="modules/utils.js"></script>
     <script defer src="modules/auth.js"></script>
     <script defer src="modules/data.js"></script>

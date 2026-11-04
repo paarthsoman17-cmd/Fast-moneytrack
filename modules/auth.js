@@ -150,13 +150,130 @@ async function login() {
         return;
     }
 
-
     if (data && data.user) {
-
-        await openApp(data.user);
-
+        await completeLoginOrRequireTotp(data.user);
     }
 
+}
+
+let pendingTotpSecret = "";
+let pendingTotpUser = null;
+
+async function completeLoginOrRequireTotp(user) {
+    if (!MoneyTrackTotp.isEnabled(user.id)) {
+        await openApp(user);
+        return;
+    }
+
+    if (window.sessionStorage.getItem(`moneytrack-totp-verified-${user.id}`) === "true") {
+        await openApp(user);
+        return;
+    }
+
+    pendingTotpUser = user;
+    showTotpChallenge();
+}
+
+function showTotpChallenge() {
+    document.getElementById("authTabs").classList.add("hidden");
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("signupForm").classList.add("hidden");
+    document.getElementById("forgotPasswordForm").classList.add("hidden");
+    document.getElementById("totpChallengeForm").classList.remove("hidden");
+    document.getElementById("authMessage").textContent = "";
+    document.getElementById("totpCode").value = "";
+    document.getElementById("totpCode").focus();
+}
+
+async function verifyTotpChallenge() {
+    const code = document.getElementById("totpCode").value.trim();
+    const message = document.getElementById("authMessage");
+    const button = document.getElementById("verifyTotpButton");
+
+    if (!/^\d{6}$/.test(code)) {
+        message.textContent = "Enter the 6-digit code from your authenticator app.";
+        return;
+    }
+
+    button.disabled = true;
+    message.textContent = "Verifying code...";
+
+    const verified = await MoneyTrackTotp.verify(
+        MoneyTrackTotp.getSecret(pendingTotpUser.id),
+        code
+    );
+
+    button.disabled = false;
+    if (!verified) {
+        message.textContent = "The authenticator code is invalid.";
+        return;
+    }
+
+    sessionStorage.setItem(`moneytrack-totp-verified-${pendingTotpUser.id}`, "true");
+    document.getElementById("totpChallengeForm").classList.add("hidden");
+    await openApp(pendingTotpUser);
+}
+
+async function cancelTotpChallenge() {
+    pendingTotpUser = null;
+    await supabaseClient.auth.signOut();
+    showLogin();
+}
+
+async function startTotpEnrollment() {
+    const message = document.getElementById("totpSecurityMessage");
+    const button = document.getElementById("setupTotpButton");
+    button.disabled = true;
+    message.textContent = "Preparing authenticator setup...";
+
+    const user = await getCurrentUser();
+    button.disabled = false;
+    if (!user) {
+        message.textContent = "Sign in again before setting up TOTP.";
+        return;
+    }
+
+    pendingTotpSecret = MoneyTrackTotp.createSecret();
+    const qrCode = document.getElementById("totpQrCode");
+    qrCode.replaceChildren();
+    new QRCode(qrCode, {
+        text: MoneyTrackTotp.provisioningUri(
+            pendingTotpSecret,
+            user.email || user.id
+        ),
+        width: 220,
+        height: 220
+    });
+    document.getElementById("totpSecret").textContent =
+        `Manual setup key: ${pendingTotpSecret}`;
+    document.getElementById("totpEnrollment").classList.remove("hidden");
+    button.classList.add("hidden");
+    message.textContent = "Scan the QR code, then enter the current code.";
+}
+
+async function verifyTotpEnrollment() {
+    const code = document.getElementById("totpEnrollmentCode").value.trim();
+    const message = document.getElementById("totpSecurityMessage");
+    if (!/^\d{6}$/.test(code)) {
+        message.textContent = "Enter the 6-digit code from your authenticator app.";
+        return;
+    }
+
+    const user = await getCurrentUser();
+    const verified = await MoneyTrackTotp.verify(pendingTotpSecret, code);
+    if (!user || !verified) {
+        message.textContent = "The setup code is invalid.";
+        return;
+    }
+
+    MoneyTrackTotp.enable(user.id, pendingTotpSecret);
+    pendingTotpSecret = "";
+    document.getElementById("totpEnrollment").classList.add("hidden");
+    document.getElementById("setupTotpButton").classList.remove("hidden");
+    document.getElementById("setupTotpButton").textContent = "Authenticator set up";
+    document.getElementById("setupTotpButton").disabled = true;
+    message.style.color = "#16a34a";
+    message.textContent = "Authenticator app connected. It will be required on your next login.";
 }
 
 function isPasswordRecoveryCallback() {
@@ -697,6 +814,7 @@ function populateProfile(user) {
 
     const profileMemberSince =
         document.getElementById("profileMemberSince");
+    refreshTotpStatus();
 
     const profileAvatarChoice =
         document.getElementById("profileAvatarChoice");
@@ -714,6 +832,23 @@ function populateProfile(user) {
 
     if (profileName) {
         profileName.value = name;
+    }
+
+    async function refreshTotpStatus() {
+        const button = document.getElementById("setupTotpButton");
+        const message = document.getElementById("totpSecurityMessage");
+        if (!button || !message || !supabaseClient?.auth?.mfa) {
+            return;
+        }
+
+        const hasTotp = MoneyTrackTotp.isEnabled(currentUser?.id || "");
+
+        if (hasTotp) {
+            button.textContent = "Authenticator set up";
+            button.disabled = true;
+            message.style.color = "#16a34a";
+            message.textContent = "Your authenticator app is connected.";
+        }
     }
 
     if (profileEmail) {

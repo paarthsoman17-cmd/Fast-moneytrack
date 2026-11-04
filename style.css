@@ -2309,3 +2309,25 @@ body[data-theme="dark"] .profile-message.success {
 body[data-theme="dark"] .profile-message.error {
     color: #f0a39a;
 }
+
+.security-card {
+    grid-column: 1 / -1;
+}
+
+.totp-qr-code {
+    width: 220px;
+    height: 220px;
+    margin: 12px auto;
+    display: block;
+    border-radius: 8px;
+    background: white;
+}
+
+#totpEnrollment {
+    display: grid;
+    gap: 12px;
+}
+
+#totpEnrollment.hidden {
+    display: none;
+}

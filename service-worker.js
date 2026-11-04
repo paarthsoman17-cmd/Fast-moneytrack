@@ -1,10 +1,11 @@
-const CACHE_NAME = "moneytrack-v16-password-reset-network-check";
+const CACHE_NAME = "moneytrack-v18-module-totp";
 
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./modules/core.js",
+    "./modules/totp.js",
     "./modules/utils.js",
     "./modules/auth.js",
     "./modules/data.js",
@@ -13,6 +14,7 @@ const FILES_TO_CACHE = [
     "./modules/reports.js",
     "./modules/app.js",
     "./vendor/supabase.js",
+    "./vendor/qrcode.min.js",
     "./vendor/chart.umd.min.js",
     "./manifest.json",
     "./icons/icon-192.png",

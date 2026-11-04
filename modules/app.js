@@ -187,8 +187,7 @@ async function startup() {
 
 
     if (user) {
-
-        await openApp(user);
+        await completeLoginOrRequireTotp(user);
 
     } else {
 
